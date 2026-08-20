@@ -11,17 +11,76 @@
   <header class="app-header">
     <div class="header-brand">
       <span class="skull-icon">☠</span>
-      <h1>SHADOWDARK <span>// GALAXY & DUNGEON GM TERMINAL</span></h1>
+      <h1>SHADOWDARK <span>// GM COMPANION</span></h1>
     </div>
     
     <div class="session-controls">
-      <input type="text" id="sessionTitle" value="Campaña: Las Criptas de Myrkhos" title="Nombre de la sesión">
+      <input type="text" id="sessionTitle" value="" placeholder="Nombre de la campaña..." title="Nombre de la sesión">
+      <button id="btnDiceTool" class="btn btn-tool-dice" aria-haspopup="dialog" aria-controls="diceOverlay">DADOS</button>
+      <button id="btnTorchTool" class="btn btn-tool-torch" aria-haspopup="dialog" aria-controls="torchOverlay">ANTORCHA</button>
+      <div id="torchHeaderStatus" class="torch-header-status" hidden role="status" aria-live="polite">
+        <span class="torch-flame-mark" aria-hidden="true"></span><span id="torchHeaderCountdown">30:00</span>
+        <button id="btnExtinguishTorch" type="button" aria-label="Extinguir antorcha">×</button>
+      </div>
       <button id="btnSaveJson" class="btn btn-secondary">💾 Guardar (.JSON)</button>
       <button id="btnLoadJsonTrigger" class="btn btn-secondary">📂 Cargar (.JSON)</button>
       <input type="file" id="loadJsonInput" accept=".json" style="display: none;">
       <button id="btnResetSession" class="btn btn-danger">⚡ Purgar Mesa</button>
     </div>
   </header>
+
+  <section id="diceOverlay" class="tool-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="diceHeading">
+    <div class="tool-card dice-card">
+      <button class="tool-close" type="button" data-close-tool="diceOverlay" aria-label="Cerrar dados">×</button>
+      <span class="tool-kicker">RESOLUCIÓN INMEDIATA</span>
+      <h2 id="diceHeading">CÁMARA DE DADOS</h2>
+      <p class="tool-intro">Elige un dado. El resultado aparece después de una breve sacudida.</p>
+      <div class="dice-choices" role="group" aria-label="Elegir dado">
+        <button type="button" class="die-choice" data-sides="2">d2</button>
+        <button type="button" class="die-choice" data-sides="4">d4</button>
+        <button type="button" class="die-choice" data-sides="6">d6</button>
+        <button type="button" class="die-choice" data-sides="8">d8</button>
+        <button type="button" class="die-choice" data-sides="10">d10</button>
+        <button type="button" class="die-choice" data-sides="12">d12</button>
+        <button type="button" class="die-choice" data-sides="20">d20</button>
+        <button type="button" class="die-choice" data-sides="100">d100</button>
+      </div>
+      <div id="diceResult" class="dice-result" aria-live="assertive">
+        <span id="diceResultValue">—</span><span id="diceResultLabel">LISTO</span>
+      </div>
+      <section class="dice-history" aria-labelledby="diceHistoryHeading">
+        <div class="dice-history-heading">
+          <h3 id="diceHistoryHeading">ÚLTIMAS 10 TIRADAS</h3>
+          <span>REGISTRO ACTIVO</span>
+        </div>
+        <ol id="diceHistoryList" class="dice-history-list" aria-live="polite"></ol>
+        <p id="diceHistoryEmpty" class="dice-history-empty">Aún no hay tiradas registradas.</p>
+      </section>
+    </div>
+  </section>
+
+  <section id="torchOverlay" class="tool-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="torchHeading">
+    <div class="tool-card torch-card">
+      <button class="tool-close" type="button" data-close-tool="torchOverlay" aria-label="Cerrar antorcha">×</button>
+      <span class="tool-kicker">RECURSO DE EXPLORACIÓN</span>
+      <h2 id="torchHeading">ANTORCHA</h2>
+      <p class="tool-intro">Elige la duración. No hay pausa: la llama sigue consumiéndose aunque cambies de pestaña.</p>
+      <div class="torch-duration-choices">
+        <button type="button" class="torch-duration" data-minutes="30"><strong>30</strong><span>MINUTOS</span></button>
+        <button type="button" class="torch-duration" data-minutes="60"><strong>60</strong><span>MINUTOS</span></button>
+      </div>
+      <p class="torch-note">Una antorcha activa reemplaza a la anterior.</p>
+    </div>
+  </section>
+
+  <section id="torchAlertOverlay" class="tool-overlay torch-alert-overlay" hidden aria-modal="true" role="alertdialog" aria-labelledby="torchAlertHeading">
+    <div class="tool-card torch-alert-card">
+      <span class="tool-kicker">SEÑAL DE PELIGRO</span>
+      <h2 id="torchAlertHeading"></h2>
+      <p id="torchAlertMessage"></p>
+      <button id="btnDismissTorchAlert" type="button" class="btn btn-action-accent">CONTINUAR</button>
+    </div>
+  </section>
 
   <nav class="nav-tabs">
     <button class="tab-btn" data-tab="tab-oraculo">🔮 ORÁCULO & SOLODARK</button>
@@ -213,15 +272,77 @@
     <div class="gm-screen-header">
       <h2>📌 PANTALLA DE GM // TABLERO DE SESIÓN EN VIVO</h2>
       <div class="threat-clock-actions">
-        <input type="text" id="newClockTitle" placeholder="Nombre de Amenaza (ej. Guardia en camino, Ritual)">
-        <select id="newClockSegments">
-          <option value="4">4 Segmentos</option>
-          <option value="6" selected>6 Segmentos</option>
-          <option value="8">8 Segmentos</option>
-        </select>
-        <button id="btnAddClockBtn" class="btn btn-action-accent">+ Añadir Reloj</button>
+        <button id="btnAddProgressBtn" class="btn btn-action">+ Añadir progreso</button>
+        <button id="btnAddDangerBtn" class="btn btn-danger">+ Añadir peligro</button>
       </div>
     </div>
+
+    <section id="adventureTimeTracker" class="adventure-time-tracker" data-filled="0" data-days="0" aria-label="Paso del tiempo en la aventura">
+      <div class="adventure-time-label">
+        <span>TIEMPO DE AVENTURA</span>
+        <strong>Ciclo del día</strong>
+      </div>
+      <div class="adventure-time-cycle">
+        <div class="adventure-time-meta">
+          <span>12 segmentos por día</span>
+          <strong id="adventureTimeProgress">0 / 12</strong>
+        </div>
+        <div class="adventure-time-segments" role="group" aria-label="Segmentos del ciclo del día">
+          <button type="button" class="adventure-time-segment" data-idx="0" aria-label="Marcar segmento 1 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="1" aria-label="Marcar segmento 2 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="2" aria-label="Marcar segmento 3 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="3" aria-label="Marcar segmento 4 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="4" aria-label="Marcar segmento 5 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="5" aria-label="Marcar segmento 6 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="6" aria-label="Marcar segmento 7 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="7" aria-label="Marcar segmento 8 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="8" aria-label="Marcar segmento 9 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="9" aria-label="Marcar segmento 10 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="10" aria-label="Marcar segmento 11 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="11" aria-label="Marcar segmento 12 de 12"></button>
+        </div>
+      </div>
+      <div class="adventure-day-counter">
+        <span>DÍAS</span>
+        <output id="adventureDayCount">000</output>
+      </div>
+    </section>
+
+    <form id="clockCreateForm" class="clock-create-panel" hidden>
+      <div class="clock-form-heading">
+        <div>
+          <span id="clockFormType" class="clock-form-type">Nuevo reloj</span>
+          <h3 id="clockFormTitle">Configura el contador</h3>
+        </div>
+        <button type="button" id="btnCancelClockForm" class="btn-clock-form-close" aria-label="Cerrar formulario">×</button>
+      </div>
+      <div class="clock-form-fields">
+        <label>
+          <span>Título</span>
+          <input type="text" id="newClockTitle" placeholder="Ej. La puerta se abre" required>
+        </label>
+        <label>
+          <span>Descripción</span>
+          <textarea id="newClockDescription" rows="2" placeholder="Qué representa este contador..." required></textarea>
+        </label>
+        <label>
+          <span>Mensaje al completar</span>
+          <textarea id="newClockCompletionMessage" rows="2" placeholder="Ej. La puerta cede y los guardias entran." required></textarea>
+        </label>
+        <label class="clock-segment-field">
+          <span>Segmentos</span>
+          <select id="newClockSegments">
+            <option value="4">4 segmentos</option>
+            <option value="6" selected>6 segmentos</option>
+            <option value="8">8 segmentos</option>
+          </select>
+        </label>
+      </div>
+      <div class="clock-form-actions">
+        <button type="button" id="btnCancelClockFormSecondary" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" id="btnCreateClock" class="btn btn-action">Crear reloj</button>
+      </div>
+    </form>
 
     <div class="threat-clocks-bar" id="threatClocksContainer"></div>
 
@@ -257,6 +378,15 @@
         </div>
         <div class="column-cards" id="gm-col-eventos"></div>
       </div>
+    </div>
+  </section>
+
+  <section id="clockCompletionOverlay" class="clock-completion-overlay" hidden aria-live="assertive" aria-atomic="true">
+    <div class="clock-completion-card" role="alertdialog" aria-labelledby="clockCompletionHeading">
+      <span id="clockCompletionContext" class="clock-completion-context"></span>
+      <h2 id="clockCompletionHeading"></h2>
+      <p id="clockCompletionMessage"></p>
+      <button type="button" id="btnCloseClockCompletion" class="btn btn-secondary">Continuar</button>
     </div>
   </section>
 
