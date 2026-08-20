@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHADOWDARK // PANTALLA TÁCTICA GM</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="skull-icon">☠</span>
+      <h1>SHADOWDARK <span>// GM COMPANION</span></h1>
+    </div>
+    
+    <div class="session-controls">
+      <input type="text" id="sessionTitle" value="" placeholder="Nombre de la campaña..." title="Nombre de la sesión">
+      <button id="btnDiceTool" class="btn btn-tool-dice" aria-haspopup="dialog" aria-controls="diceOverlay">DADOS</button>
+      <button id="btnTorchTool" class="btn btn-tool-torch" aria-haspopup="dialog" aria-controls="torchOverlay">ANTORCHA</button>
+      <div id="torchHeaderStatus" class="torch-header-status" hidden role="status" aria-live="polite">
+        <span class="torch-flame-mark" aria-hidden="true"></span><span id="torchHeaderCountdown">30:00</span>
+        <button id="btnExtinguishTorch" type="button" aria-label="Extinguir antorcha">×</button>
+      </div>
+      <button id="btnSaveJson" class="btn btn-secondary">💾 Guardar (.JSON)</button>
+      <button id="btnLoadJsonTrigger" class="btn btn-secondary">📂 Cargar (.JSON)</button>
+      <input type="file" id="loadJsonInput" accept=".json" style="display: none;">
+      <button id="btnResetSession" class="btn btn-danger">⚡ Purgar Mesa</button>
+    </div>
+  </header>
+
+  <section id="diceOverlay" class="tool-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="diceHeading">
+    <div class="tool-card dice-card">
+      <button class="tool-close" type="button" data-close-tool="diceOverlay" aria-label="Cerrar dados">×</button>
+      <span class="tool-kicker">RESOLUCIÓN INMEDIATA</span>
+      <h2 id="diceHeading">CÁMARA DE DADOS</h2>
+      <p class="tool-intro">Elige un dado. El resultado aparece después de una breve sacudida.</p>
+      <div class="dice-choices" role="group" aria-label="Elegir dado">
+        <button type="button" class="die-choice" data-sides="2">d2</button>
+        <button type="button" class="die-choice" data-sides="4">d4</button>
+        <button type="button" class="die-choice" data-sides="6">d6</button>
+        <button type="button" class="die-choice" data-sides="8">d8</button>
+        <button type="button" class="die-choice" data-sides="10">d10</button>
+        <button type="button" class="die-choice" data-sides="12">d12</button>
+        <button type="button" class="die-choice" data-sides="20">d20</button>
+        <button type="button" class="die-choice" data-sides="100">d100</button>
+      </div>
+      <div id="diceResult" class="dice-result" aria-live="assertive">
+        <span id="diceResultValue">—</span><span id="diceResultLabel">LISTO</span>
+      </div>
+      <section class="dice-history" aria-labelledby="diceHistoryHeading">
+        <div class="dice-history-heading">
+          <h3 id="diceHistoryHeading">ÚLTIMAS 10 TIRADAS</h3>
+          <span>REGISTRO ACTIVO</span>
+        </div>
+        <ol id="diceHistoryList" class="dice-history-list" aria-live="polite"></ol>
+        <p id="diceHistoryEmpty" class="dice-history-empty">Aún no hay tiradas registradas.</p>
+      </section>
+    </div>
+  </section>
+
+  <section id="torchOverlay" class="tool-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="torchHeading">
+    <div class="tool-card torch-card">
+      <button class="tool-close" type="button" data-close-tool="torchOverlay" aria-label="Cerrar antorcha">×</button>
+      <span class="tool-kicker">RECURSO DE EXPLORACIÓN</span>
+      <h2 id="torchHeading">ANTORCHA</h2>
+      <p class="tool-intro">Elige la duración. No hay pausa: la llama sigue consumiéndose aunque cambies de pestaña.</p>
+      <div class="torch-duration-choices">
+        <button type="button" class="torch-duration" data-minutes="30"><strong>30</strong><span>MINUTOS</span></button>
+        <button type="button" class="torch-duration" data-minutes="60"><strong>60</strong><span>MINUTOS</span></button>
+      </div>
+      <p class="torch-note">Una antorcha activa reemplaza a la anterior.</p>
+    </div>
+  </section>
+
+  <section id="torchAlertOverlay" class="tool-overlay torch-alert-overlay" hidden aria-modal="true" role="alertdialog" aria-labelledby="torchAlertHeading">
+    <div class="tool-card torch-alert-card">
+      <span class="tool-kicker">SEÑAL DE PELIGRO</span>
+      <h2 id="torchAlertHeading"></h2>
+      <p id="torchAlertMessage"></p>
+      <button id="btnDismissTorchAlert" type="button" class="btn btn-action-accent">CONTINUAR</button>
+    </div>
+  </section>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn" data-tab="tab-oraculo">🔮 ORÁCULO & SOLODARK</button>
+    <button class="tab-btn active" data-tab="tab-cartografia">🗺️ CARTOGRAFÍA & LUGARES</button>
+    <button class="tab-btn" data-tab="tab-asentamientos">🏰 ASENTAMIENTOS & SOCIEDAD</button>
+    <button class="tab-btn" data-tab="tab-mazmorras">🗝️ MAZMORRAS & SALAS</button>
+    <button class="tab-btn" data-tab="tab-npcs">👤 PNJS & SEGUIDORES</button>
+    <button class="tab-btn" data-tab="tab-encuentros">🎲 ENCUENTROS & SUCESOS</button>
+    <button class="tab-btn" data-tab="tab-tesoros">💰 TESOROS & ARTEFACTOS</button>
+    <button class="tab-btn" data-tab="tab-monstruos">🐉 BESTIARIO & COMBATE</button>
+  </nav>
+
+  <main class="generator-console">
+      
+     <section id="tab-oraculo" class="tab-pane">
+      <div class="generator-toolbar">
+        <input type="text" id="oracleQuestionInput" placeholder="Escribe tu pregunta afirmativa (ej. ¿Hay guardias tras la puerta?)..." style="width: 380px;">
+        
+        <select id="oracleOddsSelect">
+          <option value="unlikely">Poco Probable / Imposible (Desventaja)</option>
+          <option value="even" selected>50 / 50 (Tirada Normal)</option>
+          <option value="likely">Probable / Casi Seguro (Ventaja)</option>
+        </select>
+
+        <button class="btn btn-action-accent" id="btnRollOracle">🔮 Consultar Oráculo (d20)</button>
+      </div>
+
+      <div class="generator-toolbar" style="margin-top: 6px;">
+        <button class="btn btn-action" id="btnRollPrompt">💡 Generar Estímulo / Idea (Verbo + Sustantivo)</button>
+        <button class="btn btn-action" id="btnRollDungeonName">🗝️ Generar Nombre de Mazmorra</button>
+      </div>
+
+      <div class="preview-stage" id="oraculo-preview"></div>
+    </section>
+
+    <section id="tab-cartografia" class="tab-pane active">
+      <div class="generator-toolbar">
+        <button class="btn btn-action" id="genRegionBtn">Generar Nombre de Región</button>
+        <button class="btn btn-action" id="genHitoBtn">Generar Hito / Punto de Interés</button>
+        <button class="btn btn-action" id="genAventuraGanchoBtn">Gancho de Aventura Completo</button>
+      </div>
+      <div class="preview-stage" id="cartografia-preview"></div>
+    </section>
+
+    <section id="tab-asentamientos" class="tab-pane">
+      <div class="generator-toolbar">
+        <select id="settlementSize">
+          <option value="aldea">Aldea (3d4)</option>
+          <option value="pueblo" selected>Pueblo (4d4)</option>
+          <option value="ciudad">Gran Ciudad (6d6)</option>
+          <option value="metropolis">Metrópolis (8d8)</option>
+        </select>
+        <button class="btn btn-action" id="genSettlementBtn">Generar Asentamiento</button>
+
+        <select id="tavernTierSelect" style="margin-left: 10px;">
+          <option value="Pobre">Taberna Pobre (1d4 pc / 1d6 Bebidas)</option>
+          <option value="Estandar" selected>Taberna Estándar (1d6 pp / 1d12 Bebidas)</option>
+          <option value="Rica">Taberna Rica (1d8 po / 2d6 Bebidas)</option>
+        </select>
+        <button class="btn btn-action" id="genTavernBtn">Generar Taberna & Menú</button>
+
+        <select id="shopTierSelect" style="margin-left: 10px;">
+          <option value="pobre">Comercio Pobre (1d12)</option>
+          <option value="estandar" selected>Comercio Estándar (1d10)</option>
+          <option value="rica">Comercio Rico (1d10)</option>
+        </select>
+        <button class="btn btn-action" id="genShopBtn">Generar Comercio & Cliente</button>
+      </div>
+      <div class="preview-stage" id="asentamientos-preview"></div>
+    </section>
+
+    <section id="tab-mazmorras" class="tab-pane">
+      <div class="generator-toolbar">
+        <button class="btn btn-action" id="genDungeonBaseBtn">Cimientos & Ruina de Mazmorra</button>
+        <button class="btn btn-action" id="genDungeonRoomBtn">Sondear Sala (Área & Peligro)</button>
+        <button class="btn btn-action" id="genTrapBtn">Generar Trampa Modular</button>
+      </div>
+      <div class="preview-stage" id="mazmorras-preview"></div>
+    </section>
+
+    <section id="tab-npcs" class="tab-pane">
+      <div class="generator-toolbar">
+        <button class="btn btn-action" id="genNpcBtn">PNJ Completo (Rasgos & Secreto)</button>
+        <button class="btn btn-action" id="genFollowerBtn">Generar Seguidor (PG, Coste, Instinto)</button>
+        <button class="btn btn-action" id="genRivalsBtn">Aventurero Rival</button>
+      </div>
+      <div class="preview-stage" id="npcs-preview"></div>
+    </section>
+
+    <section id="tab-encuentros" class="tab-pane">
+  <div class="generator-toolbar">
+    <select id="biomeSelect">
+      <option value="dungeon_1_3">Mazmorra (Niveles 1-3)</option>
+        <option value="slums">Suburbios / Bajos Fondos</option>
+        <option value="swamp">Pantano / Ciénaga</option>
+        <option value="tomb">Tumbas / Criptas</option>
+        <option value="ruins">Ruinas / Edificaciones Antiguas</option>
+        <option value="university_district">Distrito Universitario</option>
+        <option value="temple_district">Distrito del Templo</option>
+        <option value="ocean">Océano / Alta Mar</option>
+        <option value="tavern">Taberna / Posada</option>
+        <option value="river_coast">Ríos y Costas</option>
+        <option value="mountain">Montaña / Cumbres</option>
+        <option value="market">Distrito del Mercado</option>
+        <option value="low_district">Distrito Bajo</option>
+        <option value="jungle">Jungla / Selva Tropical</option>
+        <option value="high_district">Distrito Alto</option>
+        <option value="grassland">Praderas y Llanuras</option>
+        <option value="forest">Bosque / Floresta</option>
+        <option value="desert">Desierto / Arenas</option>
+        <option value="deep_tunnels">Túneles Profundos / Underdark</option>
+        <option value="cave">Cuevas / Subterráneo</option>
+        <option value="castle">Distrito del Castillo</option>
+        <option value="artisan">Distrito Artesanal</option>
+      <option value="arctic">Ártico / Tierras Heladas</option>
+      <option value="cave">Cuevas / Subterráneo</option>
+      <option value="forest">Bosque</option>
+      <option value="swamp">Pantano</option>
+      <option value="mountain">Montaña</option>
+      <option value="slums">Bajos Fondos</option>
+    </select>
+
+    <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-input); padding: 3px 8px; border: 1px solid var(--border-color); border-radius: 3px;">
+      <label style="font-size: 0.75rem; color: var(--accent-gold); font-weight: bold;">Mod. Carisma (CHA):</label>
+      <select id="chaModInput" style="padding: 2px 6px; font-weight: bold;">
+        <option value="-4">-4</option>
+        <option value="-3">-3</option>
+        <option value="-2">-2</option>
+        <option value="-1">-1</option>
+        <option value="0" selected>+0</option>
+        <option value="1">+1</option>
+        <option value="2">+2</option>
+        <option value="3">+3</option>
+        <option value="4">+4</option>
+      </select>
+    </div>
+
+    <button class="btn btn-action" id="genEncounterBtn">🎲 Generar Encuentro Completo</button>
+    <button id="btnRollSomething" class="btn btn-action">
+  <i class="fa-solid fa-bolt"></i> ¡Algo Sucede!
+</button>
+    <button class="btn btn-action" id="genRumorBtn">📜 Sembrar Rumor</button>
+  </div>
+  <div class="preview-stage" id="encuentros-preview"></div>
+</section>
+
+    <section id="tab-monstruos" class="tab-pane">
+      <div class="generator-toolbar">
+        <input type="text" id="monsterSearchInput" placeholder="Buscar criatura por nombre (ej. Balor, Basilisco, Goblin, Trol)..." style="width: 340px;">
+      </div>
+      <div class="monster-search-results" id="monsterSearchResults"></div>
+    </section>
+      
+   <section id="tab-tesoros" class="tab-pane">
+      <div class="generator-toolbar">
+        <select id="treasureTierSelect">
+          <option value="0-3">Tesoro Niveles 0–3 (d100 Oficial)</option>
+          <option value="4-6">Tesoro Niveles 4–6 (d100 Oficial)</option>
+          <option value="7-9">Tesoro Niveles 7–9 (d100 Oficial)</option>
+          <option value="10+">Tesoro Niveles 10+ (d100 Oficial)</option>
+        </select>
+        <button class="btn btn-action-accent" id="genTierTreasureBtn">🎲 Tirar Tesoro (d100)</button>
+        <button class="btn btn-action-accent" id="genFullMagicItemBtn">✨ Objeto Mágico Aleatorio (d6)</button>
+        <button class="btn btn-action" id="genSingularMagicItemBtn">👑 Artefacto Singular</button>
+      </div>
+
+      <div class="generator-toolbar" style="margin-top: 6px;">
+        <button class="btn btn-action" id="genWeaponBtn">⚔️ Arma Mágica</button>
+        <button class="btn btn-action" id="genArmorBtn">🛡️ Armadura / Escudo</button>
+        <button class="btn btn-action" id="genUtilityBtn">💍 Objeto de Utilidad</button>
+        <button class="btn btn-action" id="genPotionBtn">🧪 Poción Mágica</button>
+        <button class="btn btn-action" id="genMixPotionsBtn">💥 Mezclar Pociones</button>
+        <button class="btn btn-action" id="genScrollBtn">📜 Pergamino</button>
+        <button class="btn btn-action" id="genWandBtn">🪄 Varita</button>
+      </div>
+
+      <div class="generator-toolbar" style="margin-top: 6px;">
+        <button class="btn btn-action" id="genGemBtn">💎 Gema Preciosa</button>
+        <button class="btn btn-action" id="genLuxuryBtn">🏺 Objeto de Lujo / Arte</button>
+        <button class="btn btn-action" id="genBoonBtn">✨ Don (Juramento/Secreto/Bendición)</button>
+      </div>
+
+      <div class="preview-stage" id="tesoros-preview"></div>
+    </section>
+
+  </main>
+
+  <section class="gm-screen-container">
+    <div class="gm-screen-header">
+      <h2>📌 PANTALLA DE GM // TABLERO DE SESIÓN EN VIVO</h2>
+      <div class="threat-clock-actions">
+        <button id="btnAddProgressBtn" class="btn btn-action">+ Añadir progreso</button>
+        <button id="btnAddDangerBtn" class="btn btn-danger">+ Añadir peligro</button>
+      </div>
+    </div>
+
+    <section id="adventureTimeTracker" class="adventure-time-tracker" data-filled="0" data-days="0" aria-label="Paso del tiempo en la aventura">
+      <div class="adventure-time-label">
+        <span>TIEMPO DE AVENTURA</span>
+        <strong>Ciclo del día</strong>
+      </div>
+      <div class="adventure-time-cycle">
+        <div class="adventure-time-meta">
+          <span>12 segmentos por día</span>
+          <strong id="adventureTimeProgress">0 / 12</strong>
+        </div>
+        <div class="adventure-time-segments" role="group" aria-label="Segmentos del ciclo del día">
+          <button type="button" class="adventure-time-segment" data-idx="0" aria-label="Marcar segmento 1 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="1" aria-label="Marcar segmento 2 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="2" aria-label="Marcar segmento 3 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="3" aria-label="Marcar segmento 4 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="4" aria-label="Marcar segmento 5 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="5" aria-label="Marcar segmento 6 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="6" aria-label="Marcar segmento 7 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="7" aria-label="Marcar segmento 8 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="8" aria-label="Marcar segmento 9 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="9" aria-label="Marcar segmento 10 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="10" aria-label="Marcar segmento 11 de 12"></button>
+          <button type="button" class="adventure-time-segment" data-idx="11" aria-label="Marcar segmento 12 de 12"></button>
+        </div>
+      </div>
+      <div class="adventure-day-counter">
+        <span>DÍAS</span>
+        <output id="adventureDayCount">000</output>
+      </div>
+    </section>
+
+    <form id="clockCreateForm" class="clock-create-panel" hidden>
+      <div class="clock-form-heading">
+        <div>
+          <span id="clockFormType" class="clock-form-type">Nuevo reloj</span>
+          <h3 id="clockFormTitle">Configura el contador</h3>
+        </div>
+        <button type="button" id="btnCancelClockForm" class="btn-clock-form-close" aria-label="Cerrar formulario">×</button>
+      </div>
+      <div class="clock-form-fields">
+        <label>
+          <span>Título</span>
+          <input type="text" id="newClockTitle" placeholder="Ej. La puerta se abre" required>
+        </label>
+        <label>
+          <span>Descripción</span>
+          <textarea id="newClockDescription" rows="2" placeholder="Qué representa este contador..." required></textarea>
+        </label>
+        <label>
+          <span>Mensaje al completar</span>
+          <textarea id="newClockCompletionMessage" rows="2" placeholder="Ej. La puerta cede y los guardias entran." required></textarea>
+        </label>
+        <label class="clock-segment-field">
+          <span>Segmentos</span>
+          <select id="newClockSegments">
+            <option value="4">4 segmentos</option>
+            <option value="6" selected>6 segmentos</option>
+            <option value="8">8 segmentos</option>
+          </select>
+        </label>
+      </div>
+      <div class="clock-form-actions">
+        <button type="button" id="btnCancelClockFormSecondary" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" id="btnCreateClock" class="btn btn-action">Crear reloj</button>
+      </div>
+    </form>
+
+    <div class="threat-clocks-bar" id="threatClocksContainer"></div>
+
+    <div class="gm-screen-grid">
+      <div class="gm-column" data-col="mundo">
+        <div class="column-header">
+          <h3>🗺️ MUNDO & SOCIEDAD</h3>
+          <button class="btn-clear-col" title="Limpiar columna">×</button>
+        </div>
+        <div class="column-cards" id="gm-col-mundo"></div>
+      </div>
+
+      <div class="gm-column" data-col="combate">
+        <div class="column-header">
+          <h3>⚔️ BESTIAS & COMBATE</h3>
+          <button class="btn-clear-col" title="Limpiar columna">×</button>
+        </div>
+        <div class="column-cards" id="gm-col-combate"></div>
+      </div>
+
+      <div class="gm-column" data-col="mazmorra">
+        <div class="column-header">
+          <h3>🗝️ MAZMORRAS & ÁREAS</h3>
+          <button class="btn-clear-col" title="Limpiar columna">×</button>
+        </div>
+        <div class="column-cards" id="gm-col-mazmorra"></div>
+      </div>
+
+      <div class="gm-column" data-col="eventos">
+        <div class="column-header">
+          <h3>⚡ ENCUENTROS & AMENAZAS</h3>
+          <button class="btn-clear-col" title="Limpiar columna">×</button>
+        </div>
+        <div class="column-cards" id="gm-col-eventos"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="clockCompletionOverlay" class="clock-completion-overlay" hidden aria-live="assertive" aria-atomic="true">
+    <div class="clock-completion-card" role="alertdialog" aria-labelledby="clockCompletionHeading">
+      <span id="clockCompletionContext" class="clock-completion-context"></span>
+      <h2 id="clockCompletionHeading"></h2>
+      <p id="clockCompletionMessage"></p>
+      <button type="button" id="btnCloseClockCompletion" class="btn btn-secondary">Continuar</button>
+    </div>
+  </section>
+
+  <script src="js/data/monsters.js"></script>
+    <script src="js/data/encounters/enc_ocean.js"></script>
+  <script src="js/data/tables/oracle_tables.js"></script>
+  <script src="js/data/tables/mundane_tables.js"></script>
+  <script src="js/data/tables/magic_armor.js"></script>
+<script src="js/data/tables/magic_weapons.js"></script>
+<script src="js/data/tables/magic_utility.js"></script>
+    <script src="js/data/tables/rumors.js"></script>
+    <script src="js/data/tables/something_happens.js"></script>
+  <script src="js/data/tables/magic_spells.js"></script>
+  <script src="js/data/tables/magic_potions.js"></script>
+    <script src="js/data/encounters/enc_tavern.js"></script>
+    <script src="js/data/encounters/enc_slums.js"></script>
+    <script src="js/data/encounters/enc_swamp.js"></script>
+    <script src="js/data/encounters/enc_ruins.js"></script>
+    <script src="js/data/encounters/enc_river_coast.js"></script>
+  <script src="js/data/tables/magic_personality.js"></script>
+    <script src="js/data/encounters/enc_university_district.js"></script>
+    <script src="js/data/encounters/enc_temple_district.js"></script>
+    <script src="js/data/encounters/enc_tomb.js"></script>
+    <script src="js/data/encounters/enc_mountain.js"></script>
+  <script src="js/data/tables/singular_items.js"></script>
+    <script src="js/data/encounters/enc_market.js"></script>
+    <script src="js/data/encounters/enc_low_district.js"></script>
+    <script src="js/data/encounters/enc_jungle.js"></script>
+    <script src="js/data/encounters/enc_high_district.js"></script>
+    <script src="js/data/encounters/enc_grassland.js"></script>
+    <script src="js/data/encounters/enc_forest.js"></script>
+    <script src="js/data/encounters/enc_desert.js"></script>
+    <script src="js/data/encounters/enc_deep_tunnels.js"></script>
+    <script src="js/data/encounters/enc_cave.js"></script>
+    <script src="js/data/encounters/enc_castle.js"></script>
+    <script src="js/data/encounters/enc_artisan.js"></script>
+  <script src="js/data/encounters/enc_arctic.js"></script>
+  <script src="js/data/cartography.js"></script>
+  <script src="js/data/settlements.js"></script>
+  <script src="js/data/dungeons.js"></script>
+  <script src="js/data/npcs.js"></script>
+  <script src="js/data/encounters/encountersEngine.js"></script>
+  <script src="js/data/encounters/enc_dungeon_1_3.js"></script>
+  <script src="js/data/treasure.js"></script>
+  
+  <script src="js/components/threatClock.js"></script>
+  <script src="js/components/monsterCard.js"></script>
+  
+  <script src="js/app.js"></script>
+</body>
+</html>
