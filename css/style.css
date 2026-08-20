@@ -1925,10 +1925,12 @@ textarea::placeholder {
     flex-direction: column;
   }
 
-  .session-controls input[type="text"],
-  .session-controls .btn {
-    width: 100%;
-  }
+  .session-controls input[type="text"] {
+  box-sizing: border-box;
+  height: 34px;
+  min-height: 34px;
+  padding: 4px 9px;
+}
 
   .card-body {
     padding: 11px;
